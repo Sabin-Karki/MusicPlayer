@@ -4,8 +4,12 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Hashtable;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -20,6 +24,7 @@ public class MPGui extends JFrame {
 
     private JLabel songTitle, songArtist;
     private JPanel playbackBtn;
+    private JSlider playbackSlider;
 
     public MPGui() {
         // Creating title
@@ -41,9 +46,12 @@ public class MPGui extends JFrame {
         // Change the frame color
         getContentPane().setBackground(FRAME_COLOR);
 
-        musicPlayer = new MusicPlayerr();
+        musicPlayer = new MusicPlayerr(this);
 
         jFileChooser = new JFileChooser();
+
+ 
+
 
         // Set a default path for file explorer
         jFileChooser.setCurrentDirectory(new File("C:\\Users\\sabin\\OneDrive\\Documents\\SideProject\\MusicPlayer\\assets"));
@@ -80,9 +88,39 @@ public class MPGui extends JFrame {
         add(songArtist);
 
         // Playback slider
-        JSlider playbackSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 0);
+  playbackSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 0);
         playbackSlider.setBounds(getWidth() / 2 - 300 / 2, 365, 300, 40);
         playbackSlider.setBackground(null);
+        playbackSlider.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e){
+                //when user is holding tick we want to pause the song
+                 musicPlayer.pauseSong();
+            }
+            @Override
+            public void mouseReleased(MouseEvent e){
+                //when user drops the tick
+                JSlider source= (JSlider) e.getSource();
+
+                //get the frame value from where user wants to playback to
+                int frame= source.getValue(); 
+
+                //update current frame  in music player to this frame
+                musicPlayer.setCurrentFrame(frame);
+
+                //update current time in milli as well
+                musicPlayer.setcurrentTimeinMilli((int)(frame/(2.08 * musicPlayer.getCurrentSong().getFrameRatePerMilliseconds())));
+
+                //resume song
+
+                musicPlayer.playCurrentSong();
+
+                //toggle on pause button and toggle off play button
+
+                enablePauseButtonDisablePlayButton();
+
+            }
+        });
         add(playbackSlider);
 
         // Playback buttons
@@ -104,6 +142,7 @@ public class MPGui extends JFrame {
         JMenu songMenu = new JMenu("Song");
         menuBar.add(songMenu);
 
+
         // Add the load song item in the song menu
         JMenuItem loadSong = new JMenuItem("Load Song");
         loadSong.addActionListener(new ActionListener() {
@@ -124,9 +163,12 @@ public class MPGui extends JFrame {
                         // Update song title and artist
                         updateSongTitleAndArtist(song);
 
+                        //update playback slider
+                        UpdatePlaybackSlider(song);
+
                         //toggle on pause and toggle off play button
 
-                        enablePauseButtonDisableButton();
+                        enablePauseButtonDisablePlayButton();
                        
                     }
                 }
@@ -134,19 +176,56 @@ public class MPGui extends JFrame {
         });
         songMenu.add(loadSong);
 
-        // Add the liked saved song in the song menu
-        JMenuItem savedSong = new JMenuItem("Saved Song");
-        songMenu.add(savedSong);
+     
 
         // Add the playlist menu
         JMenu playJMenu = new JMenu("Playlist");
         menuBar.add(playJMenu);
 
+
+
+
         // Adding items to playlist menu
         JMenuItem createPlaylist = new JMenuItem("Create Playlist");
+        createPlaylist.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                //load music playlist dialog
+                new MusicPlaylistDialog(MPGui.this).setVisible(true);;
+                    
+
+            }
+        });
         playJMenu.add(createPlaylist);
 
+
+
+
+
         JMenuItem loadPlaylist = new JMenuItem("Load Playlist");
+        loadPlaylist.addActionListener(new ActionListener() {
+         @Override
+         public void actionPerformed(ActionEvent e){
+           JFileChooser jFileChooser=new JFileChooser();
+           jFileChooser.setFileFilter(new FileNameExtensionFilter("TravisPlayList", "txt"));
+           jFileChooser.setCurrentDirectory(new File("C:\\Users\\sabin\\OneDrive\\Documents\\SideProject\\MusicPlayer\\assets"));
+
+           
+           int result=jFileChooser.showOpenDialog(MPGui.this);
+           File selectedFile=jFileChooser.getSelectedFile();
+
+           if(result==JFileChooser.APPROVE_OPTION && selectedFile!=null){
+          //stop music
+          musicPlayer.stopSong();
+
+          //load playlist
+          musicPlayer.loadPlaylist(selectedFile);
+
+           }
+
+
+         }   
+        });
         playJMenu.add(loadPlaylist);
 
         add(tool);
@@ -171,7 +250,7 @@ public class MPGui extends JFrame {
             @Override
             public void actionPerformed (ActionEvent e){
                 //toggle on pause and toggle off play
-                enablePauseButtonDisableButton();
+                enablePauseButtonDisablePlayButton();
 
                 //play or resume song
                 musicPlayer.playCurrentSong();
@@ -207,7 +286,12 @@ public class MPGui extends JFrame {
         add(playbackBtn);
     }
 
-    private void updateSongTitleAndArtist(Song song) {
+    //this will be used to update our slider from music player class
+    public void setPlaybackSliderValue(int frame){
+        playbackSlider.setValue(frame);
+    }
+
+    public  void updateSongTitleAndArtist(Song song) {
         System.out.println("Updating song title and artist");
         System.out.println("Title: " + song.getSongTitle());
         System.out.println("Artist: " + song.getSongArtist());
@@ -216,7 +300,33 @@ public class MPGui extends JFrame {
         songArtist.setText(song.getSongArtist());
     }
 
-    private void enablePauseButtonDisableButton(){
+ public void UpdatePlaybackSlider(Song song){
+
+        //update max count for slider
+        playbackSlider.setMaximum(song.getMp3File().getFrameCount());
+
+        //create the song lenght label
+        Hashtable<Integer,JLabel> labelTable=new Hashtable<>();
+
+        //initially,it will be 00:00
+        JLabel labelBeginning=new JLabel("00:00");
+        labelBeginning.setFont(new Font("Dialog",Font.BOLD,18));
+        labelBeginning.setForeground((TEXT_COLOR));
+
+        //end will vary depending on song 
+        JLabel labelEnd=new JLabel(song.getSongLength());
+        labelEnd.setFont(new Font("Dialog",Font.BOLD,18));
+        labelEnd.setForeground((TEXT_COLOR));
+        labelTable.put(0,labelBeginning);
+        labelTable.put(song.getMp3File().getFrameCount(),labelEnd);
+        playbackSlider.setLabelTable(labelTable);
+        playbackSlider.setPaintLabels(true);
+
+
+
+    }
+
+  public  void enablePauseButtonDisablePlayButton(){
     //retrieve reference to play and playbackbtn panel
     JButton playButton=(JButton) playbackBtn.getComponent(1);
 
@@ -232,7 +342,7 @@ public class MPGui extends JFrame {
     pauseButton.setEnabled(true);
     }
     
-    private void enablePlayButtonDisablePauseButton(){
+   public void enablePlayButtonDisablePauseButton(){
         //retrieve reference to play and playbackbtn panel
         JButton playButton=(JButton) playbackBtn.getComponent(1);
     
