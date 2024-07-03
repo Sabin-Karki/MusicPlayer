@@ -1,0 +1,10 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Users\\sabin\\Downloads\\postgresql-42.7.3.jar",
+        "c:\\Users\\sabin\\Downloads\\jaudiotagger-3.0.1.jar",
+        "c:\\Users\\sabin\\Downloads\\jlayer-1.0.1.jar",
+        "c:\\Users\\sabin\\Downloads\\mp3agic-0.9.0.jar"
+    ],
+    "java.debug.settings.onBuildFailureProceed": true
+}
