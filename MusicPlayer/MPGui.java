@@ -241,6 +241,13 @@ public class MPGui extends JFrame {
         prevButton.setBorderPainted(false);
         prevButton.setBackground(null);
         playbackBtn.add(prevButton);
+        prevButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                musicPlayer.prevSong();
+                
+            }
+        });
 
         // Play button
         JButton playButton = new JButton(loadImage("MusicPlayer\\assets\\play.png"));
@@ -282,7 +289,16 @@ public class MPGui extends JFrame {
         nextButton.setBorderPainted(false);
         nextButton.setBackground(null);
         playbackBtn.add(nextButton);
+        nextButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                
+                //go to next song 
+             musicPlayer.nextSong();
 
+
+            }
+        });
         add(playbackBtn);
     }
 
