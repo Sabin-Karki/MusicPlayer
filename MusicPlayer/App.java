@@ -7,9 +7,7 @@ public class App {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 new MPGui().setVisible(true);
-                // Song song = new Song("MusicPlayer\\assets\\Stargazing.mp3");
-                // System.out.println((song.getSongTitle()));
-                // System.out.println(song.getSongArtist());
+
             }
         });
     }
